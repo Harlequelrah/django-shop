@@ -9,10 +9,26 @@ class ArticleSerializer(serializers.ModelSerializer):
         model = Article
         fields = ['id', 'date_created', 'date_updated', 'name', 'price', 'product']
 
+    def validate_name(self, value):
+        if Article.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Article already exists")
+        return value
+
+    def validate_price(self,value):
+        if value < 1 :
+            raise serializers.ValidationError("Price must be greater than 1")
+        return value
+
+    def validate(self,data):
+        if data['product'].active is False:
+            raise serializers.ValidationError("Product must be Active")
+        return data
+
+
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model=Product
-        fields=['id', 'date_created', 'date_updated', 'name','category']
+        fields=['id', 'date_created', 'date_updated', 'name','category','ecoscore']
 class ProductDetailSerializer(serializers.ModelSerializer):
 
     articles = serializers.SerializerMethodField()
@@ -30,7 +46,17 @@ class CategoryListSerializer(serializers.ModelSerializer):
 
     class Meta :
         model = Category
-        fields=['id', 'date_created', 'date_updated', 'name']
+        fields=['id', 'date_created', 'date_updated', 'name','description']
+
+    def validate_name(self,value):
+        if Category.objects.filter(name=value).exists():
+            raise serializers.ValidationError("Category already exists")
+        return value
+
+    def validate(self,data):
+        if data['name'] not in data['description']:
+            raise serializers.ValidationError("Name must be in description")
+        return data
 class CategoryDetailSerializer(serializers.ModelSerializer):
 
     products = serializers.SerializerMethodField()
